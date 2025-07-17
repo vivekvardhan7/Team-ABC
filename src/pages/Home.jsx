@@ -1,8 +1,193 @@
-import React, { useEffect, useState } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
+import React, { useEffect, useState, useRef } from 'react'
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Play, CheckCircle, Star, Users, Award, Zap, Code, Brain, Rocket, Download, ChevronDown } from 'lucide-react'
 import TypewriterText from '../components/TypewriterText'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { Sphere, Box, Torus, OrbitControls, Float, Text3D, MeshDistortMaterial } from '@react-three/drei'
+import * as THREE from 'three'
+
+// 3D Background Component
+const FloatingGeometry = () => {
+  const meshRef = useRef()
+  const [hovered, setHovered] = useState(false)
+  
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.3) * 0.1
+      meshRef.current.rotation.y = state.clock.elapsedTime * 0.1
+      meshRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.2
+    }
+  })
+
+  return (
+    <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
+      <mesh
+        ref={meshRef}
+        onPointerOver={() => setHovered(true)}
+        onPointerOut={() => setHovered(false)}
+        scale={hovered ? 1.1 : 1}
+      >
+        <icosahedronGeometry args={[1, 0]} />
+        <MeshDistortMaterial
+          color={hovered ? "#8b5cf6" : "#3b82f6"}
+          transparent
+          opacity={0.6}
+          distort={0.3}
+          speed={2}
+        />
+      </mesh>
+    </Float>
+  )
+}
+
+const ParticleField = () => {
+  const pointsRef = useRef()
+  const particleCount = 100
+  
+  const positions = new Float32Array(particleCount * 3)
+  for (let i = 0; i < particleCount; i++) {
+    positions[i * 3] = (Math.random() - 0.5) * 20
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 20
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 20
+  }
+
+  useFrame((state) => {
+    if (pointsRef.current) {
+      pointsRef.current.rotation.y = state.clock.elapsedTime * 0.05
+    }
+  })
+
+  return (
+    <points ref={pointsRef}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          count={particleCount}
+          array={positions}
+          itemSize={3}
+        />
+      </bufferGeometry>
+      <pointsMaterial size={0.05} color="#60a5fa" transparent opacity={0.6} />
+    </points>
+  )
+}
+
+const Background3D = () => {
+  return (
+    <div className="fixed inset-0 -z-10">
+      <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
+        <ambientLight intensity={0.5} />
+        <pointLight position={[10, 10, 10]} intensity={0.8} />
+        <pointLight position={[-10, -10, -10]} intensity={0.3} color="#8b5cf6" />
+        
+        <ParticleField />
+        
+        <group position={[-3, 2, -2]}>
+          <FloatingGeometry />
+        </group>
+        
+        <group position={[3, -1, -3]}>
+          <Float speed={1.5} rotationIntensity={0.3}>
+            <Torus args={[0.8, 0.3, 16, 32]}>
+              <meshStandardMaterial color="#ec4899" transparent opacity={0.4} />
+            </Torus>
+          </Float>
+        </group>
+        
+        <group position={[0, -2, -4]}>
+          <Float speed={2.5} rotationIntensity={0.4}>
+            <Box args={[1, 1, 1]}>
+              <meshStandardMaterial color="#10b981" transparent opacity={0.3} />
+            </Box>
+          </Float>
+        </group>
+      </Canvas>
+    </div>
+  )
+}
+
+// 3D Team Member Card Component
+const TeamMember3D = ({ member, index }) => {
+  const [isHovered, setIsHovered] = useState(false)
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50, rotateX: -15 }}
+      animate={{ opacity: 1, y: 0, rotateX: 0 }}
+      transition={{ delay: index * 0.2, duration: 0.8 }}
+      whileHover={{ 
+        y: -10, 
+        rotateX: 5, 
+        rotateY: 5,
+        scale: 1.05,
+        transition: { duration: 0.3 }
+      }}
+      onHoverStart={() => setIsHovered(true)}
+      onHoverEnd={() => setIsHovered(false)}
+      className="group relative"
+      style={{
+        transformStyle: 'preserve-3d',
+        perspective: '1000px'
+      }}
+    >
+      <div className="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-500">
+        {/* 3D Glow Effect */}
+        <div className={`absolute inset-0 rounded-2xl transition-all duration-500 ${
+          isHovered ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20' : ''
+        }`} />
+        
+        <div className="relative z-10">
+          <motion.div 
+            className="relative w-20 h-20 mx-auto mb-6 overflow-hidden rounded-full"
+            animate={{
+              rotateY: isHovered ? 10 : 0,
+              scale: isHovered ? 1.1 : 1
+            }}
+            transition={{ duration: 0.3 }}
+            style={{
+              transformStyle: 'preserve-3d'
+            }}
+          >
+            <div className={`absolute inset-0 bg-gradient-to-r ${member.gradient} rounded-full`} />
+            <img
+              src={member.photo}
+              alt={member.name}
+              className="w-full h-full object-cover rounded-full relative z-10"
+            />
+            <div className={`absolute inset-0 rounded-full transition-all duration-300 ${
+              isHovered ? 'bg-white/20' : ''
+            }`} />
+          </motion.div>
+          
+          <motion.h3 
+            className="text-xl font-bold text-gray-900 mb-2 text-center"
+            animate={{ z: isHovered ? 20 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {member.name}
+          </motion.h3>
+          
+          <motion.p 
+            className={`text-center font-medium mb-2 ${member.color}`}
+            animate={{ z: isHovered ? 15 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {member.role}
+          </motion.p>
+          
+          <motion.p 
+            className="text-gray-500 text-sm text-center"
+            animate={{ z: isHovered ? 10 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {member.university}
+          </motion.p>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
 
 const Home = () => {
   const { scrollY } = useScroll()
@@ -52,7 +237,7 @@ const Home = () => {
     {
       name: 'Sarah Johnson',
       role: 'CEO, TechStart',
-      content: 'Team ABC delivered an exceptional AI solution that transformed our business operations.',
+      content: 'Propel Studio delivered an exceptional AI solution that transformed our business operations.',
       rating: 5,
       avatar: 'SJ'
     },
@@ -79,15 +264,44 @@ const Home = () => {
     { number: '24/7', label: 'Support' }
   ]
 
+  const teamMembers = [
+    {
+      name: 'Sai Vivek',
+      role: 'AI/ML Engineer',
+      university: 'NIT Mizoram',
+      photo: '/SaiVivek.jpg',
+      gradient: 'from-blue-500 to-purple-600',
+      color: 'text-blue-600'
+    },
+    {
+      name: 'Anand Sai',
+      role: 'Backend & AI/ML Dev',
+      university: 'GITAM University',
+      photo: '/AnandSai.jpg',
+      gradient: 'from-purple-500 to-pink-500',
+      color: 'text-purple-600'
+    },
+    {
+      name: 'Nandan',
+      role: 'Frontend & UI/UX',
+      university: 'GITAM University',
+      photo: '/Nandan.jpg',
+      gradient: 'from-green-400 to-blue-500',
+      color: 'text-green-600'
+    }
+  ]
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen relative overflow-hidden bg-white"
+      className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50"
     >
+      <Background3D />
+      
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <section className="relative min-h-screen flex items-center justify-center px-4">
         <div className="max-w-7xl mx-auto text-center relative z-10">
           {/* Main Headline */}
           <motion.div
@@ -95,25 +309,31 @@ const Home = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             className="mb-8"
+            style={{ transform: `translateY(${y1}px)` }}
           >
             <motion.h1 
-              className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-gray-900"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
+              className="text-6xl md:text-8xl font-bold mb-6 leading-tight text-gray-900"
+              initial={{ opacity: 0, scale: 0.8, rotateX: -15 }}
+              animate={{ opacity: 1, scale: 1, rotateX: 0 }}
               transition={{ duration: 1, ease: "easeOut" }}
+              style={{
+                transformStyle: 'preserve-3d',
+                textShadow: '0 10px 30px rgba(0,0,0,0.1)'
+              }}
             >
               <span className="text-gray-600">We are</span>
               <br />
               <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
-                Team ABC
+                Propel Studio
               </span>
             </motion.h1>
 
             <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, y: 20, rotateX: -10 }}
+              animate={{ opacity: 1, y: 0, rotateX: 0 }}
               transition={{ delay: 0.5, duration: 0.8 }}
-              className="text-2xl md:text-4xl font-light text-gray-700 mb-8"
+              className="text-3xl md:text-5xl font-light text-gray-700 mb-8"
+              style={{ transformStyle: 'preserve-3d' }}
             >
               <TypewriterText
                 texts={roles}
@@ -132,100 +352,70 @@ const Home = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8, duration: 0.8 }}
             className="mb-12"
+            style={{ transform: `translateY(${y2}px)` }}
           >
             <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed">
-              Transforming ideas into intelligent digital solutions with cutting-edge AI and modern web technologies
+              Transforming ideas into intelligent digital solutions with cutting-edge AI and immersive 3D experiences
             </p>
           </motion.div>
 
-          {/* Team Introduction */}
+          {/* Team Introduction with 3D Cards */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1, duration: 0.8 }}
             className="mb-12"
           >
-            <div className="flex flex-col md:flex-row gap-8 justify-center items-center">
-              {/* Sai Vivek */}
-              <motion.div 
-                className="flex items-center space-x-4 group bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
-                whileHover={{ scale: 1.05, y: -5 }}
-              >
-                <div className="relative w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
-                  <img
-                    src="/SaiVivek.jpg"
-                    alt="Sai Vivek"
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                </div>
-                <div className="text-left">
-                  <h3 className="text-lg font-semibold text-gray-900">Sai Vivek</h3>
-                  <p className="text-blue-600 text-sm font-medium">AI/ML Engineer</p>
-                  <p className="text-gray-500 text-xs">NIT Mizoram</p>
-                </div>
-              </motion.div>
-
-              {/* Anand Sai */}
-              <motion.div 
-                className="flex items-center space-x-4 group bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
-                whileHover={{ scale: 1.05, y: -5 }}
-              >
-                <div className="relative w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center overflow-hidden">
-                  <img
-                    src="/AnandSai.jpg"
-                    alt="Anand Sai"
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                </div>
-                <div className="text-left">
-                  <h3 className="text-lg font-semibold text-gray-900">Anand Sai</h3>
-                  <p className="text-purple-600 text-sm font-medium">Backend & AI/ML Dev</p>
-                  <p className="text-gray-500 text-xs">GITAM University</p>
-                </div>
-              </motion.div>
-
-              {/* Nandan */}
-              <motion.div 
-                className="flex items-center space-x-4 group bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
-                whileHover={{ scale: 1.05, y: -5 }}
-              >
-                <div className="relative w-16 h-16 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center overflow-hidden">
-                  <img
-                    src="/Nandan.jpg"
-                    alt="Nandan"
-                    className="w-full h-full object-cover rounded-full"
-                  />
-                </div>
-                <div className="text-left">
-                  <h3 className="text-lg font-semibold text-gray-900">Nandan</h3>
-                  <p className="text-green-600 text-sm font-medium">Frontend & UI/UX</p>
-                  <p className="text-gray-500 text-xs">GITAM University</p>
-                </div>
-              </motion.div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+              {teamMembers.map((member, index) => (
+                <TeamMember3D key={index} member={member} index={index} />
+              ))}
             </div>
           </motion.div>
 
-          {/* CTA Buttons */}
+          {/* CTA Buttons with 3D Effects */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.2, duration: 0.8 }}
             className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16"
           >
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <motion.div 
+              whileHover={{ 
+                scale: 1.05, 
+                rotateX: 5, 
+                rotateY: 5,
+                transition: { duration: 0.3 }
+              }}
+              whileTap={{ scale: 0.95 }}
+              style={{ transformStyle: 'preserve-3d' }}
+            >
               <Link
                 to="/projects"
-                className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center space-x-2"
+                className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 flex items-center space-x-2 relative overflow-hidden"
+                style={{
+                  boxShadow: '0 10px 40px rgba(59, 130, 246, 0.3)'
+                }}
               >
-                <span>View Our Work</span>
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                <span className="relative z-10">View Our Work</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </Link>
             </motion.div>
 
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <motion.div 
+              whileHover={{ 
+                scale: 1.05, 
+                rotateX: 5, 
+                rotateY: -5,
+                transition: { duration: 0.3 }
+              }}
+              whileTap={{ scale: 0.95 }}
+              style={{ transformStyle: 'preserve-3d' }}
+            >
               <Link
                 to="/contact"
-                className="px-8 py-4 border-2 border-blue-600 text-blue-600 font-semibold rounded-full hover:bg-blue-600 hover:text-white transition-all duration-300 flex items-center space-x-2"
+                className="px-8 py-4 border-2 border-blue-600 text-blue-600 font-semibold rounded-full hover:bg-blue-600 hover:text-white transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-xl"
               >
                 <span>Get Started</span>
                 <ArrowRight className="w-5 h-5" />
@@ -233,7 +423,7 @@ const Home = () => {
             </motion.div>
           </motion.div>
 
-          {/* Scroll Indicator */}
+          {/* Scroll Indicator with 3D Effect */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -241,9 +431,13 @@ const Home = () => {
             className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
           >
             <motion.div
-              animate={{ y: [0, 10, 0] }}
+              animate={{ 
+                y: [0, 10, 0],
+                rotateX: [0, 10, 0]
+              }}
               transition={{ duration: 2, repeat: Infinity }}
               className="text-gray-400 cursor-pointer"
+              style={{ transformStyle: 'preserve-3d' }}
             >
               <ChevronDown size={32} />
             </motion.div>
@@ -251,8 +445,8 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 px-4 bg-white">
+      {/* Features Section with 3D Cards */}
+      <section className="py-20 px-4 relative">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -273,36 +467,57 @@ const Home = () => {
             {features.map((feature, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                whileHover={{ y: -10 }}
+                initial={{ opacity: 0, y: 30, rotateX: -15 }}
+                whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+                whileHover={{ 
+                  y: -10, 
+                  rotateX: 5, 
+                  rotateY: 5,
+                  scale: 1.02,
+                  transition: { duration: 0.3 }
+                }}
                 transition={{ delay: index * 0.2, duration: 0.6 }}
                 viewport={{ once: true }}
-                className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100"
+                className="bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border border-white/20 relative overflow-hidden"
+                style={{ transformStyle: 'preserve-3d' }}
               >
-                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 opacity-0 hover:opacity-100 transition-opacity duration-300" />
+                
+                <motion.div 
+                  className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 relative z-10"
+                  whileHover={{ rotateY: 180 }}
+                  transition={{ duration: 0.6 }}
+                  style={{ transformStyle: 'preserve-3d' }}
+                >
                   <feature.icon className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">{feature.title}</h3>
-                <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                </motion.div>
+                
+                <h3 className="text-xl font-semibold text-gray-900 mb-4 relative z-10">{feature.title}</h3>
+                <p className="text-gray-600 leading-relaxed relative z-10">{feature.description}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-blue-50 to-purple-50">
+      {/* Stats Section with 3D Elements */}
+      <section className="py-20 px-4 bg-gradient-to-r from-blue-50/50 to-purple-50/50 relative">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 30, rotateX: -15 }}
+                whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+                whileHover={{ 
+                  scale: 1.05, 
+                  rotateY: 5,
+                  transition: { duration: 0.3 }
+                }}
                 transition={{ delay: index * 0.1, duration: 0.6 }}
                 viewport={{ once: true }}
-                className="text-center"
+                className="text-center bg-white/60 backdrop-blur-lg rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                style={{ transformStyle: 'preserve-3d' }}
               >
                 <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
                   {stat.number}
@@ -314,8 +529,8 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="py-20 px-4 bg-white">
+      {/* Testimonials Section with 3D Cards */}
+      <section className="py-20 px-4 relative">
         <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -336,11 +551,18 @@ const Home = () => {
             {testimonials.map((testimonial, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0, y: 30, rotateX: -15 }}
+                whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+                whileHover={{ 
+                  y: -5, 
+                  rotateX: 5, 
+                  rotateY: 5,
+                  transition: { duration: 0.3 }
+                }}
                 transition={{ delay: index * 0.2, duration: 0.6 }}
                 viewport={{ once: true }}
-                className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100"
+                className="bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border border-white/20"
+                style={{ transformStyle: 'preserve-3d' }}
               >
                 <div className="flex items-center mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
@@ -363,9 +585,28 @@ const Home = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-purple-600">
-        <div className="max-w-4xl mx-auto text-center">
+      {/* CTA Section with 3D Effects */}
+      <section className="py-20 px-4 bg-gradient-to-r from-blue-600 to-purple-600 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <Canvas>
+            <ambientLight intensity={0.3} />
+            <pointLight position={[10, 10, 10]} intensity={0.5} />
+            
+            <Float speed={1} rotationIntensity={0.2}>
+              <Sphere args={[2, 32, 32]} position={[-5, 2, -5]}>
+                <meshStandardMaterial color="#ffffff" transparent opacity={0.1} />
+              </Sphere>
+            </Float>
+            
+            <Float speed={1.5} rotationIntensity={0.3}>
+              <Box args={[1.5, 1.5, 1.5]} position={[5, -2, -3]}>
+                <meshStandardMaterial color="#ffffff" transparent opacity={0.1} />
+              </Box>
+            </Float>
+          </Canvas>
+        </div>
+        
+        <div className="max-w-4xl mx-auto text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -380,16 +621,32 @@ const Home = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <motion.div 
+                whileHover={{ 
+                  scale: 1.05, 
+                  rotateX: 5,
+                  transition: { duration: 0.3 }
+                }}
+                whileTap={{ scale: 0.95 }}
+                style={{ transformStyle: 'preserve-3d' }}
+              >
                 <Link
                   to="/contact"
-                  className="px-8 py-4 bg-white text-blue-600 font-semibold rounded-full hover:bg-gray-100 transition-all duration-300 shadow-lg"
+                  className="px-8 py-4 bg-white text-blue-600 font-semibold rounded-full hover:bg-gray-100 transition-all duration-300 shadow-2xl hover:shadow-3xl"
                 >
                   Start Your Project
                 </Link>
               </motion.div>
               
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <motion.div 
+                whileHover={{ 
+                  scale: 1.05, 
+                  rotateX: 5,
+                  transition: { duration: 0.3 }
+                }}
+                whileTap={{ scale: 0.95 }}
+                style={{ transformStyle: 'preserve-3d' }}
+              >
                 <Link
                   to="/projects"
                   className="px-8 py-4 border-2 border-white text-white font-semibold rounded-full hover:bg-white hover:text-blue-600 transition-all duration-300"
