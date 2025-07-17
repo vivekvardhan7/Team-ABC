@@ -5,8 +5,6 @@ import { AnimatePresence } from 'framer-motion'
 // Components
 import AdvancedLoader from './components/AdvancedLoader'
 import FloatingNav from './components/FloatingNav'
-import CustomCursor from './components/CustomCursor'
-import ThreeBackground from './components/ThreeBackground'
 
 // Pages
 import Home from './pages/Home'
@@ -43,14 +41,8 @@ function App() {
 
   return (
     <Router>
-      <div className="min-h-screen bg-black relative overflow-x-hidden">
-        {/* 3D Background */}
-        <ThreeBackground />
-        
-        {/* Custom Cursor */}
-        <CustomCursor />
-        
-        {/* Floating Navigation */}
+      <div className="min-h-screen bg-white relative overflow-x-hidden">
+        {/* Navigation */}
         <FloatingNav 
           soundEnabled={soundEnabled} 
           setSoundEnabled={setSoundEnabled} 
