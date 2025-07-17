@@ -20,9 +20,16 @@ import './App.css'
 
 function App() {
   const [isLoading, setIsLoading] = useState(true)
+  const [theme, setTheme] = useState('light')
 
   const handleLoadingComplete = () => {
     setIsLoading(false)
+  }
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light'
+    setTheme(newTheme)
+    document.documentElement.classList.toggle('dark', newTheme === 'dark')
   }
 
   useEffect(() => {
@@ -41,19 +48,23 @@ function App() {
   return (
     <ThemeProvider>
       <Router>
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 relative overflow-x-hidden transition-colors duration-500">
+        <div className={`min-h-screen transition-all duration-700 ${
+          theme === 'light' 
+            ? 'bg-gradient-to-br from-slate-50 via-white to-blue-50' 
+            : 'bg-gradient-to-br from-gray-900 via-gray-800 to-blue-900'
+        } relative overflow-x-hidden`}>
           {/* Navigation */}
-          <FloatingNav />
+          <FloatingNav theme={theme} toggleTheme={toggleTheme} />
           
           {/* Main Content */}
           <AnimatePresence mode="wait">
             <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/services" element={<Services />} />
-              <Route path="/stack" element={<Stack />} />
-              <Route path="/team" element={<Team />} />
-              <Route path="/contact" element={<Contact />} />
+              <Route path="/" element={<Home theme={theme} />} />
+              <Route path="/projects" element={<Projects theme={theme} />} />
+              <Route path="/services" element={<Services theme={theme} />} />
+              <Route path="/stack" element={<Stack theme={theme} />} />
+              <Route path="/team" element={<Team theme={theme} />} />
+              <Route path="/contact" element={<Contact theme={theme} />} />
             </Routes>
           </AnimatePresence>
         </div>

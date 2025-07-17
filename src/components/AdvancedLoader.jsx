@@ -10,7 +10,7 @@ const AdvancedLoader = ({ onLoadingComplete }) => {
     "Loading components...",
     "Preparing interface...",
     "Almost ready...",
-    "Welcome to Team ABC!"
+    "Welcome to Propel Studio!"
   ]
 
   useEffect(() => {
@@ -41,7 +41,7 @@ const AdvancedLoader = ({ onLoadingComplete }) => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-white flex items-center justify-center z-50 overflow-hidden"
+        className="fixed inset-0 bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center z-50 overflow-hidden"
       >
         <div className="text-center z-10 max-w-md mx-auto px-4">
           {/* Main Logo */}
@@ -62,7 +62,7 @@ const AdvancedLoader = ({ onLoadingComplete }) => {
                 scale: { duration: 2, repeat: Infinity }
               }}
             >
-              <span className="text-white font-bold text-2xl">ABC</span>
+              <span className="text-white font-bold text-2xl">PS</span>
             </motion.div>
             
             <motion.div 
@@ -71,7 +71,7 @@ const AdvancedLoader = ({ onLoadingComplete }) => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.6 }}
             >
-              Team ABC
+              Propel Studio
             </motion.div>
             
             <motion.div 

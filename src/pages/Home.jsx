@@ -1,14 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Play, CheckCircle, Star, Users, Award, Zap, Code, Brain, Rocket, Download, ChevronDown } from 'lucide-react'
+import { ArrowRight, Star, Users, Award, Zap, Code, Brain, Rocket, ChevronDown } from 'lucide-react'
 import TypewriterText from '../components/TypewriterText'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Sphere, Box, Torus, OrbitControls, Float, Text3D, MeshDistortMaterial } from '@react-three/drei'
+import { Sphere, Box, Torus, Float, MeshDistortMaterial, Text, OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 
-// 3D Background Component
-const FloatingGeometry = () => {
+// 3D Background Components
+const FloatingGeometry = ({ theme }) => {
   const meshRef = useRef()
   const [hovered, setHovered] = useState(false)
   
@@ -30,9 +30,9 @@ const FloatingGeometry = () => {
       >
         <icosahedronGeometry args={[1, 0]} />
         <MeshDistortMaterial
-          color={hovered ? "#8b5cf6" : "#3b82f6"}
+          color={hovered ? (theme === 'light' ? "#8b5cf6" : "#a855f7") : (theme === 'light' ? "#3b82f6" : "#60a5fa")}
           transparent
-          opacity={0.6}
+          opacity={theme === 'light' ? 0.6 : 0.4}
           distort={0.3}
           speed={2}
         />
@@ -41,7 +41,7 @@ const FloatingGeometry = () => {
   )
 }
 
-const ParticleField = () => {
+const ParticleField = ({ theme }) => {
   const pointsRef = useRef()
   const particleCount = 100
   
@@ -68,29 +68,38 @@ const ParticleField = () => {
           itemSize={3}
         />
       </bufferGeometry>
-      <pointsMaterial size={0.05} color="#60a5fa" transparent opacity={0.6} />
+      <pointsMaterial 
+        size={0.05} 
+        color={theme === 'light' ? "#60a5fa" : "#93c5fd"} 
+        transparent 
+        opacity={theme === 'light' ? 0.6 : 0.4} 
+      />
     </points>
   )
 }
 
-const Background3D = () => {
+const Background3D = ({ theme }) => {
   return (
     <div className="fixed inset-0 -z-10">
       <Canvas camera={{ position: [0, 0, 5], fov: 75 }}>
-        <ambientLight intensity={0.5} />
-        <pointLight position={[10, 10, 10]} intensity={0.8} />
-        <pointLight position={[-10, -10, -10]} intensity={0.3} color="#8b5cf6" />
+        <ambientLight intensity={theme === 'light' ? 0.5 : 0.3} />
+        <pointLight position={[10, 10, 10]} intensity={theme === 'light' ? 0.8 : 0.6} />
+        <pointLight position={[-10, -10, -10]} intensity={0.3} color={theme === 'light' ? "#8b5cf6" : "#a855f7"} />
         
-        <ParticleField />
+        <ParticleField theme={theme} />
         
         <group position={[-3, 2, -2]}>
-          <FloatingGeometry />
+          <FloatingGeometry theme={theme} />
         </group>
         
         <group position={[3, -1, -3]}>
           <Float speed={1.5} rotationIntensity={0.3}>
             <Torus args={[0.8, 0.3, 16, 32]}>
-              <meshStandardMaterial color="#ec4899" transparent opacity={0.4} />
+              <meshStandardMaterial 
+                color={theme === 'light' ? "#ec4899" : "#f472b6"} 
+                transparent 
+                opacity={theme === 'light' ? 0.4 : 0.3} 
+              />
             </Torus>
           </Float>
         </group>
@@ -98,7 +107,11 @@ const Background3D = () => {
         <group position={[0, -2, -4]}>
           <Float speed={2.5} rotationIntensity={0.4}>
             <Box args={[1, 1, 1]}>
-              <meshStandardMaterial color="#10b981" transparent opacity={0.3} />
+              <meshStandardMaterial 
+                color={theme === 'light' ? "#10b981" : "#34d399"} 
+                transparent 
+                opacity={theme === 'light' ? 0.3 : 0.2} 
+              />
             </Box>
           </Float>
         </group>
@@ -108,7 +121,7 @@ const Background3D = () => {
 }
 
 // 3D Team Member Card Component
-const TeamMember3D = ({ member, index }) => {
+const TeamMember3D = ({ member, index, theme }) => {
   const [isHovered, setIsHovered] = useState(false)
   
   return (
@@ -131,7 +144,11 @@ const TeamMember3D = ({ member, index }) => {
         perspective: '1000px'
       }}
     >
-      <div className="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-500">
+      <div className={`relative backdrop-blur-lg border rounded-2xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-500 ${
+        theme === 'light' 
+          ? 'bg-white/10 border-white/20' 
+          : 'bg-gray-800/10 border-gray-700/20'
+      }`}>
         {/* 3D Glow Effect */}
         <div className={`absolute inset-0 rounded-2xl transition-all duration-500 ${
           isHovered ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20' : ''
@@ -161,7 +178,9 @@ const TeamMember3D = ({ member, index }) => {
           </motion.div>
           
           <motion.h3 
-            className="text-xl font-bold text-gray-900 mb-2 text-center"
+            className={`text-xl font-bold mb-2 text-center transition-colors duration-300 ${
+              theme === 'light' ? 'text-gray-900' : 'text-white'
+            }`}
             animate={{ z: isHovered ? 20 : 0 }}
             transition={{ duration: 0.3 }}
           >
@@ -177,7 +196,9 @@ const TeamMember3D = ({ member, index }) => {
           </motion.p>
           
           <motion.p 
-            className="text-gray-500 text-sm text-center"
+            className={`text-sm text-center transition-colors duration-300 ${
+              theme === 'light' ? 'text-gray-500' : 'text-gray-400'
+            }`}
             animate={{ z: isHovered ? 10 : 0 }}
             transition={{ duration: 0.3 }}
           >
@@ -189,11 +210,10 @@ const TeamMember3D = ({ member, index }) => {
   )
 }
 
-const Home = () => {
+const Home = ({ theme }) => {
   const { scrollY } = useScroll()
   const y1 = useTransform(scrollY, [0, 300], [0, -50])
   const y2 = useTransform(scrollY, [0, 300], [0, -100])
-  const opacity = useTransform(scrollY, [0, 300], [1, 0.3])
 
   const roles = [
     'AI Engineers',
@@ -203,17 +223,6 @@ const Home = () => {
     'Problem Solvers',
     'Tech Architects',
   ]
-
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
-
-  useEffect(() => {
-    const updateMousePosition = (e) => {
-      setMousePosition({ x: e.clientX, y: e.clientY })
-    }
-    
-    window.addEventListener('mousemove', updateMousePosition)
-    return () => window.removeEventListener('mousemove', updateMousePosition)
-  }, [])
 
   const features = [
     {
@@ -296,9 +305,9 @@ const Home = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 via-white to-blue-50"
+      className="min-h-screen relative overflow-hidden"
     >
-      <Background3D />
+      <Background3D theme={theme} />
       
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center px-4">
@@ -312,16 +321,18 @@ const Home = () => {
             style={{ transform: `translateY(${y1}px)` }}
           >
             <motion.h1 
-              className="text-6xl md:text-8xl font-bold mb-6 leading-tight text-gray-900"
+              className={`text-6xl md:text-8xl font-bold mb-6 leading-tight transition-colors duration-700 ${
+                theme === 'light' ? 'text-gray-900' : 'text-white'
+              }`}
               initial={{ opacity: 0, scale: 0.8, rotateX: -15 }}
               animate={{ opacity: 1, scale: 1, rotateX: 0 }}
               transition={{ duration: 1, ease: "easeOut" }}
               style={{
                 transformStyle: 'preserve-3d',
-                textShadow: '0 10px 30px rgba(0,0,0,0.1)'
+                textShadow: theme === 'light' ? '0 10px 30px rgba(0,0,0,0.1)' : '0 10px 30px rgba(255,255,255,0.1)'
               }}
             >
-              <span className="text-gray-600">We are</span>
+              <span className={theme === 'light' ? 'text-gray-600' : 'text-gray-400'}>We are</span>
               <br />
               <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
                 Propel Studio
@@ -332,7 +343,9 @@ const Home = () => {
               initial={{ opacity: 0, y: 20, rotateX: -10 }}
               animate={{ opacity: 1, y: 0, rotateX: 0 }}
               transition={{ delay: 0.5, duration: 0.8 }}
-              className="text-3xl md:text-5xl font-light text-gray-700 mb-8"
+              className={`text-3xl md:text-5xl font-light mb-8 transition-colors duration-700 ${
+                theme === 'light' ? 'text-gray-700' : 'text-gray-300'
+              }`}
               style={{ transformStyle: 'preserve-3d' }}
             >
               <TypewriterText
@@ -354,7 +367,9 @@ const Home = () => {
             className="mb-12"
             style={{ transform: `translateY(${y2}px)` }}
           >
-            <p className="text-xl md:text-2xl text-gray-600 mb-8 max-w-4xl mx-auto leading-relaxed">
+            <p className={`text-xl md:text-2xl mb-8 max-w-4xl mx-auto leading-relaxed transition-colors duration-700 ${
+              theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+            }`}>
               Transforming ideas into intelligent digital solutions with cutting-edge AI and immersive 3D experiences
             </p>
           </motion.div>
@@ -368,7 +383,7 @@ const Home = () => {
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
               {teamMembers.map((member, index) => (
-                <TeamMember3D key={index} member={member} index={index} />
+                <TeamMember3D key={index} member={member} index={index} theme={theme} />
               ))}
             </div>
           </motion.div>
@@ -415,7 +430,9 @@ const Home = () => {
             >
               <Link
                 to="/contact"
-                className="px-8 py-4 border-2 border-blue-600 text-blue-600 font-semibold rounded-full hover:bg-blue-600 hover:text-white transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-xl"
+                className={`px-8 py-4 border-2 border-blue-600 text-blue-600 font-semibold rounded-full hover:bg-blue-600 hover:text-white transition-all duration-300 flex items-center space-x-2 shadow-lg hover:shadow-xl ${
+                  theme === 'dark' ? 'hover:text-white' : ''
+                }`}
               >
                 <span>Get Started</span>
                 <ArrowRight className="w-5 h-5" />
@@ -436,7 +453,9 @@ const Home = () => {
                 rotateX: [0, 10, 0]
               }}
               transition={{ duration: 2, repeat: Infinity }}
-              className="text-gray-400 cursor-pointer"
+              className={`cursor-pointer transition-colors duration-700 ${
+                theme === 'light' ? 'text-gray-400' : 'text-gray-500'
+              }`}
               style={{ transformStyle: 'preserve-3d' }}
             >
               <ChevronDown size={32} />
@@ -455,10 +474,14 @@ const Home = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className={`text-4xl md:text-5xl font-bold mb-6 transition-colors duration-700 ${
+              theme === 'light' ? 'text-gray-900' : 'text-white'
+            }`}>
               What We <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Deliver</span>
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className={`text-xl max-w-3xl mx-auto transition-colors duration-700 ${
+              theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+            }`}>
               Comprehensive digital solutions tailored to your business needs
             </p>
           </motion.div>
@@ -478,10 +501,18 @@ const Home = () => {
                 }}
                 transition={{ delay: index * 0.2, duration: 0.6 }}
                 viewport={{ once: true }}
-                className="bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border border-white/20 relative overflow-hidden"
+                className={`backdrop-blur-lg rounded-2xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border relative overflow-hidden ${
+                  theme === 'light' 
+                    ? 'bg-white/80 border-white/20' 
+                    : 'bg-gray-800/80 border-gray-700/20'
+                }`}
                 style={{ transformStyle: 'preserve-3d' }}
               >
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 opacity-0 hover:opacity-100 transition-opacity duration-300" />
+                <div className={`absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-300 ${
+                  theme === 'light' 
+                    ? 'bg-gradient-to-br from-blue-50/50 to-purple-50/50' 
+                    : 'bg-gradient-to-br from-blue-900/20 to-purple-900/20'
+                }`} />
                 
                 <motion.div 
                   className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 relative z-10"
@@ -492,8 +523,16 @@ const Home = () => {
                   <feature.icon className="w-8 h-8 text-white" />
                 </motion.div>
                 
-                <h3 className="text-xl font-semibold text-gray-900 mb-4 relative z-10">{feature.title}</h3>
-                <p className="text-gray-600 leading-relaxed relative z-10">{feature.description}</p>
+                <h3 className={`text-xl font-semibold mb-4 relative z-10 transition-colors duration-700 ${
+                  theme === 'light' ? 'text-gray-900' : 'text-white'
+                }`}>
+                  {feature.title}
+                </h3>
+                <p className={`leading-relaxed relative z-10 transition-colors duration-700 ${
+                  theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+                }`}>
+                  {feature.description}
+                </p>
               </motion.div>
             ))}
           </div>
@@ -501,7 +540,11 @@ const Home = () => {
       </section>
 
       {/* Stats Section with 3D Elements */}
-      <section className="py-20 px-4 bg-gradient-to-r from-blue-50/50 to-purple-50/50 relative">
+      <section className={`py-20 px-4 relative transition-colors duration-700 ${
+        theme === 'light' 
+          ? 'bg-gradient-to-r from-blue-50/50 to-purple-50/50' 
+          : 'bg-gradient-to-r from-blue-900/20 to-purple-900/20'
+      }`}>
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
@@ -516,13 +559,21 @@ const Home = () => {
                 }}
                 transition={{ delay: index * 0.1, duration: 0.6 }}
                 viewport={{ once: true }}
-                className="text-center bg-white/60 backdrop-blur-lg rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300"
+                className={`text-center backdrop-blur-lg rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 ${
+                  theme === 'light' 
+                    ? 'bg-white/60' 
+                    : 'bg-gray-800/60'
+                }`}
                 style={{ transformStyle: 'preserve-3d' }}
               >
                 <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
                   {stat.number}
                 </div>
-                <div className="text-gray-600 font-medium">{stat.label}</div>
+                <div className={`font-medium transition-colors duration-700 ${
+                  theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+                }`}>
+                  {stat.label}
+                </div>
               </motion.div>
             ))}
           </div>
@@ -539,10 +590,14 @@ const Home = () => {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className={`text-4xl md:text-5xl font-bold mb-6 transition-colors duration-700 ${
+              theme === 'light' ? 'text-gray-900' : 'text-white'
+            }`}>
               What Our <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Clients Say</span>
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className={`text-xl max-w-3xl mx-auto transition-colors duration-700 ${
+              theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+            }`}>
               Don't just take our word for it - hear from our satisfied clients
             </p>
           </motion.div>
@@ -561,7 +616,11 @@ const Home = () => {
                 }}
                 transition={{ delay: index * 0.2, duration: 0.6 }}
                 viewport={{ once: true }}
-                className="bg-white/80 backdrop-blur-lg rounded-2xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border border-white/20"
+                className={`backdrop-blur-lg rounded-2xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border ${
+                  theme === 'light' 
+                    ? 'bg-white/80 border-white/20' 
+                    : 'bg-gray-800/80 border-gray-700/20'
+                }`}
                 style={{ transformStyle: 'preserve-3d' }}
               >
                 <div className="flex items-center mb-4">
@@ -569,14 +628,26 @@ const Home = () => {
                     <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <p className="text-gray-600 mb-6 leading-relaxed">"{testimonial.content}"</p>
+                <p className={`mb-6 leading-relaxed transition-colors duration-700 ${
+                  theme === 'light' ? 'text-gray-600' : 'text-gray-400'
+                }`}>
+                  "{testimonial.content}"
+                </p>
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold mr-4">
                     {testimonial.avatar}
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900">{testimonial.name}</div>
-                    <div className="text-gray-500 text-sm">{testimonial.role}</div>
+                    <div className={`font-semibold transition-colors duration-700 ${
+                      theme === 'light' ? 'text-gray-900' : 'text-white'
+                    }`}>
+                      {testimonial.name}
+                    </div>
+                    <div className={`text-sm transition-colors duration-700 ${
+                      theme === 'light' ? 'text-gray-500' : 'text-gray-400'
+                    }`}>
+                      {testimonial.role}
+                    </div>
                   </div>
                 </div>
               </motion.div>
